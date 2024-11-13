@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview Form with Photo</title>
+    <style>
+        /* Styling for mobile-friendly canvas */
+        #canvasContainer {
+            width: 100%;
+            max-width: 600px; /* Larger max width for form layout */
+            margin: auto;
+            position: relative;
+            border: 1px solid #ddd;
+        }
+        #canvas {
+            width: 100%;
+        }
+        #draggablePhoto {
+            position: absolute;
+            width: 80px; /* Original width of photo */
+            height: 80px; /* Original height of photo */
+            cursor: pointer;
+            border: 2px solid #666;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #draggablePhoto img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        /* Position Buttons */
+        .position-button {
+            margin: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            border: 1px solid #333;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Upload Form Image:</h2>
+    <input type="file" id="formImageUpload" accept="image/*">
+    <h2>Upload Your Photo:</h2>
+    <input type="file" id="photoUpload" accept="image/*">
+    <br><br>
+
+    <div id="canvasContainer">
+        <!-- Canvas for Form image -->
+        <canvas id="canvas"></canvas>
+        
+        <!-- Photo element to place in grid positions -->
+        <div id="draggablePhoto" style="display:none;">
+            <img id="photoImage" alt="Photo">
+        </div>
+    </div>
+
+    <br>
+    <h3>Select Photo Position:</h3>
+    <div>
+        <!-- Row 1 -->
+        <button class="position-button" onclick="setPosition(1)">Position 1</button>
+        <button class="position-button" onclick="setPosition(2)">Position 2</button>
+        <button class="position-button" onclick="setPosition(3)">Position 3</button>
+        
+        <!-- Row 2 -->
+        <button class="position-button" onclick="setPosition(4)">Position 4</button>
+        <button class="position-button" onclick="setPosition(5)">Position 5</button>
+        <button class="position-button" onclick="setPosition(6)">Position 6</button>
+
+        <!-- Row 3 -->
+        <button class="position-button" onclick="setPosition(7)">Position 7</button>
+        <button class="position-button" onclick="setPosition(8)">Position 8</button>
+        <button class="position-button" onclick="setPosition(9)">Position 9</button>
+
+        <!-- Row 4 -->
+        <button class="position-button" onclick="setPosition(10)">Position 10</button>
+        <button class="position-button" onclick="setPosition(11)">Position 11</button>
+        <button class="position-button" onclick="setPosition(12)">Position 12</button>
+    </div>
+
+    <br>
+    <!-- Button to download the PDF -->
+    <button onclick="downloadPDF()">Download PDF</button>
+
+    <!-- Include the jsPDF and html2canvas libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+
+    <script>
+        let formImage = null;
+
+        // Load Form Image
+        document.getElementById('formImageUpload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    formImage = new Image();
+                    formImage.onload = drawFormImage;
+                    formImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert("Please select an image file for the form.");
+            }
+        });
+
+        // Load and Display User Photo
+        document.getElementById('photoUpload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('photoImage').src = e.target.result;
+                    document.getElementById('draggablePhoto').style.display = 'block';
+                    
+                    // Set the photo to Position 1 by default
+                    setPosition(1);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert("Please select an image file for your photo.");
+            }
+        });
+
+        // Function to draw Form image on canvas
+        function drawFormImage() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = formImage.width;
+            canvas.height = formImage.height;
+            ctx.drawImage(formImage, 0, 0);
+        }
+
+        // Set photo position based on button click
+        function setPosition(position) {
+            const draggablePhoto = document.getElementById('draggablePhoto');
+            const canvasContainer = document.getElementById('canvasContainer');
+            const canvasWidth = canvasContainer.offsetWidth;
+            const canvasHeight = canvasContainer.offsetHeight;
+
+            const rowHeight = canvasHeight / 4;  // Divide form into 4 vertical sections
+            const colWidth = canvasWidth / 3;    // Divide form into 3 horizontal sections
+
+            // Calculate row and column based on position number
+            const row = Math.floor((position - 1) / 3);
+            const col = (position - 1) % 3;
+
+            // Set photo position
+            draggablePhoto.style.top = `${row * rowHeight + 10}px`;
+            draggablePhoto.style.left = `${col * colWidth + 10}px`;
+        }
+
+        // Function to download the canvas and photo as PDF
+        function downloadPDF() {
+            html2canvas(document.getElementById('canvasContainer')).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF();
+
+                // Fit image within PDF page
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save("form_with_photo.pdf");
+            });
+        }
+    </script>
+
+</body>
+</html>
