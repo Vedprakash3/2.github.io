@@ -18,9 +18,9 @@
         }
         #draggablePhoto {
             position: absolute;
-            width: 80px; /* Original width of photo */
-            height: 80px; /* Original height of photo */
-            cursor: pointer;
+            width: 80px; /* Passport size photo width */
+            height: 100px; /* Passport size photo height */
+            cursor: move;
             border: 2px solid #666;
             border-radius: 8px;
             overflow: hidden;
@@ -29,15 +29,6 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-        }
-        /* Position Buttons */
-        .position-button {
-            margin: 5px;
-            padding: 5px 10px;
-            cursor: pointer;
-            border: 1px solid #333;
-            background-color: #f0f0f0;
-            border-radius: 4px;
         }
     </style>
 </head>
@@ -57,30 +48,6 @@
         <div id="draggablePhoto" style="display:none;">
             <img id="photoImage" alt="Photo">
         </div>
-    </div>
-
-    <br>
-    <h3>Select Photo Position:</h3>
-    <div>
-        <!-- Row 1 -->
-        <button class="position-button" onclick="setPosition(1)">Position 1</button>
-        <button class="position-button" onclick="setPosition(2)">Position 2</button>
-        <button class="position-button" onclick="setPosition(3)">Position 3</button>
-        
-        <!-- Row 2 -->
-        <button class="position-button" onclick="setPosition(4)">Position 4</button>
-        <button class="position-button" onclick="setPosition(5)">Position 5</button>
-        <button class="position-button" onclick="setPosition(6)">Position 6</button>
-
-        <!-- Row 3 -->
-        <button class="position-button" onclick="setPosition(7)">Position 7</button>
-        <button class="position-button" onclick="setPosition(8)">Position 8</button>
-        <button class="position-button" onclick="setPosition(9)">Position 9</button>
-
-        <!-- Row 4 -->
-        <button class="position-button" onclick="setPosition(10)">Position 10</button>
-        <button class="position-button" onclick="setPosition(11)">Position 11</button>
-        <button class="position-button" onclick="setPosition(12)">Position 12</button>
     </div>
 
     <br>
@@ -119,8 +86,8 @@
                     document.getElementById('photoImage').src = e.target.result;
                     document.getElementById('draggablePhoto').style.display = 'block';
                     
-                    // Set the photo to Position 1 by default
-                    setPosition(1);
+                    // Set initial position for the photo
+                    setPosition(100, 100);
                 };
                 reader.readAsDataURL(file);
             } else {
@@ -137,24 +104,50 @@
             ctx.drawImage(formImage, 0, 0);
         }
 
-        // Set photo position based on button click
-        function setPosition(position) {
+        // Function to set the photo's initial position
+        function setPosition(x, y) {
             const draggablePhoto = document.getElementById('draggablePhoto');
-            const canvasContainer = document.getElementById('canvasContainer');
-            const canvasWidth = canvasContainer.offsetWidth;
-            const canvasHeight = canvasContainer.offsetHeight;
-
-            const rowHeight = canvasHeight / 4;  // Divide form into 4 vertical sections
-            const colWidth = canvasWidth / 3;    // Divide form into 3 horizontal sections
-
-            // Calculate row and column based on position number
-            const row = Math.floor((position - 1) / 3);
-            const col = (position - 1) % 3;
-
-            // Set photo position
-            draggablePhoto.style.top = `${row * rowHeight + 10}px`;
-            draggablePhoto.style.left = `${col * colWidth + 10}px`;
+            draggablePhoto.style.left = `${x}px`;
+            draggablePhoto.style.top = `${y}px`;
         }
+
+        // Make the photo draggable using mouse/touch
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        const draggablePhoto = document.getElementById('draggablePhoto');
+
+        // Handle mouse/touch start for dragging
+        draggablePhoto.addEventListener('mousedown', startDrag);
+        draggablePhoto.addEventListener('touchstart', startDrag);
+
+        function startDrag(event) {
+            isDragging = true;
+            const rect = draggablePhoto.getBoundingClientRect();
+            if (event.type === 'mousedown') {
+                offsetX = event.clientX - rect.left;
+                offsetY = event.clientY - rect.top;
+            } else if (event.type === 'touchstart') {
+                offsetX = event.touches[0].clientX - rect.left;
+                offsetY = event.touches[0].clientY - rect.top;
+            }
+        }
+
+        // Handle mouse/touch move for dragging
+        document.addEventListener('mousemove', dragPhoto);
+        document.addEventListener('touchmove', dragPhoto);
+
+        function dragPhoto(event) {
+            if (!isDragging) return;
+            const clientX = event.type === 'mousemove' ? event.clientX : event.touches[0].clientX;
+            const clientY = event.type === 'mousemove' ? event.clientY : event.touches[0].clientY;
+            draggablePhoto.style.left = `${clientX - offsetX}px`;
+            draggablePhoto.style.top = `${clientY - offsetY}px`;
+        }
+
+        // Handle mouse/touch end for drag stop
+        document.addEventListener('mouseup', () => isDragging = false);
+        document.addEventListener('touchend', () => isDragging = false);
 
         // Function to download the canvas and photo as PDF
         function downloadPDF() {
